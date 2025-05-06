@@ -1,0 +1,52 @@
+name: blinko
+services:
+  app:
+    image: blinkospace/blinko:latest
+    container_name: blinko-app
+    restart: always
+    pull_policy: always
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_URL=https://${BASE_HOST_NAME:-localhost:1111}
+      - NEXT_PUBLIC_BASE_URL=https://${BASE_HOST_NAME:-localhost:1111}
+      - NEXTAUTH_SECRET=${ENCRYPTION_KEY:-dfmdafnsadmcnmxkNckmnakmnckamnck}
+      - DATABASE_URL=postgresql://postgres:blinko_db_pass@db:5432/postgres
+    ports:
+      - 172.17.0.1:59095:1111
+    volumes:
+      - /var/lib/srv/$USER/docker/blinkospace/blinko/latest/rootfs/data/blinko:/app/.blinko
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://blinko-app:1111/']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - blinko
+
+  db:
+    image: postgres:14
+    container_name: blinko-db
+    restart: always
+    pull_policy: always
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=blinko_db_pass
+    volumes:
+      - /var/lib/srv/$USER/docker/blinkospace/blinko/latest/rootfs/data/db/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres', '-d', 'postgres']
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    networks:
+      - blinko
+
+networks:
+  blinko:
+    name: blinko
+    external: false
