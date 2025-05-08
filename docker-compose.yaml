@@ -1,16 +1,25 @@
+# nginx proxy address - http://172.17.0.1:59095
+
 name: blinko
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
 services:
   app:
     image: blinkospace/blinko:latest
     container_name: blinko-app
     restart: always
     pull_policy: always
+    logging: *default-logging
     environment:
       - NODE_ENV=production
-      - NEXTAUTH_URL=https://${BASE_HOST_NAME:-localhost:1111}
-      - NEXT_PUBLIC_BASE_URL=https://${BASE_HOST_NAME:-localhost:1111}
+      - NEXTAUTH_URL=https://${BASE_HOST_NAME:-$HOSTNAME}
+      - NEXT_PUBLIC_BASE_URL=https://${BASE_HOST_NAME:-$HOSTNAME}
       - NEXTAUTH_SECRET=${ENCRYPTION_KEY:-dfmdafnsadmcnmxkNckmnakmnckamnck}
-      - DATABASE_URL=postgresql://postgres:blinko_db_pass@db:5432/postgres
+      - DATABASE_URL=postgresql://postgres:CezapmhZiHlefz7V6xHbRGtd4jdmSeqV@blinko-db:5432/postgres
     ports:
       - 172.17.0.1:59095:1111
     volumes:
@@ -22,7 +31,7 @@ services:
       retries: 5
       start_period: 30s
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     networks:
       - blinko
@@ -32,10 +41,11 @@ services:
     container_name: blinko-db
     restart: always
     pull_policy: always
+    logging: *default-logging
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=blinko_db_pass
+      - POSTGRES_PASSWORD=CezapmhZiHlefz7V6xHbRGtd4jdmSeqV
     volumes:
       - /var/lib/srv/$USER/docker/blinkospace/blinko/latest/rootfs/data/db/postgres:/var/lib/postgresql/data
     healthcheck:
