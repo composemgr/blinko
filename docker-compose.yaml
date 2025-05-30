@@ -23,7 +23,7 @@ services:
     ports:
       - 172.17.0.1:59095:1111
     volumes:
-      - /var/lib/srv/$USER/docker/blinkospace/blinko/latest/rootfs/data/blinko:/app/.blinko
+      - '/var/lib/srv/$USER/docker/blinko/rootfs/data/blinko:/app/.blinko'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://blinko-app:1111/']
       interval: 30s
@@ -47,7 +47,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=CezapmhZiHlefz7V6xHbRGtd4jdmSeqV
     volumes:
-      - /var/lib/srv/$USER/docker/blinkospace/blinko/latest/rootfs/data/db/postgres:/var/lib/postgresql/data
+      - '/var/lib/srv/$USER/databases/postgres:/var/lib/postgresql/data'
     healthcheck:
       test: ['CMD', 'pg_isready', '-U', 'postgres', '-d', 'postgres']
       interval: 5s
