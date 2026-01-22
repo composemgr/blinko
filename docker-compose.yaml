@@ -48,7 +48,7 @@ services:
       POSTGRES_USER: ${DB_ADMIN_NAME:-postgres}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS:-CezapmhZiHlefz7V6xHbRGtd4jdmSeqV}
     volumes:
-      - './rootfs/db/postgres/blinko:/var/lib/postgresql/data'
+      - './rootfs/data/db/postgres/blinko:/var/lib/postgresql/data'
     healthcheck:
       test: ['CMD', 'pg_isready', '-U', '${DB_ADMIN_NAME:-postgres}', '-d', '${DB_CREATE_DATABASE_NAME:-postgres}']
       interval: 5s
