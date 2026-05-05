@@ -51,8 +51,8 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/blinko` - Data storage
-- `./rootfs/data/db/postgres/blinko` - Data storage
+- `./volumes/data/blinko` - Data storage
+- `./volumes/data/db/postgres/blinko` - Data storage
 
 ## 🔐 Security
 
