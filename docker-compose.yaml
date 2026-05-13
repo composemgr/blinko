@@ -17,6 +17,8 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: blinko-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       NODE_ENV: production
       NEXTAUTH_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
       NEXT_PUBLIC_BASE_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
@@ -35,8 +37,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://blinko-app:1111'
+      - 'cloudflare.hostname=blinko.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.blinko-app.entrypoints=http'
+      - 'traefik.http.routers.blinko-app-secure.tls=true'
+      - 'traefik.http.routers.blinko-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.blinko-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.blinko-app.middlewares=blinko-app-https-redirect'
+      - 'traefik.http.routers.blinko-app-secure.entrypoints=https'
+      - 'traefik.http.routers.blinko-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.blinko-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.blinko-app-secure.service=blinko-app'
+      - 'traefik.http.services.blinko-app.loadbalancer.server.port=1111'
     networks:
       - blinko
+      - proxy
+      - cloudflare
 
   db:
     image: postgres:latest
@@ -47,6 +67,7 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: blinko-db
       POSTGRES_DB: ${DB_CREATE_DATABASE_NAME:-postgres}
       POSTGRES_USER: ${DB_ADMIN_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
@@ -64,3 +85,7 @@ networks:
   blinko:
     name: blinko
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
