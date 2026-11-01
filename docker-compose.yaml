@@ -1,4 +1,4 @@
-# nginx proxy address - http://172.17.0.1:59095
+# nginx proxy address - http://172.17.0.1:64121
 
 name: blinko
 x-logging: &default-logging
@@ -23,9 +23,9 @@ services:
       NEXTAUTH_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
       NEXT_PUBLIC_BASE_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
       NEXTAUTH_SECRET: ${ENCRYPTION_KEY:-changeme_encryption_key_min_32_chars}
-      DATABASE_URL: postgresql://${DB_ADMIN_NAME:-postgres}:${DB_ADMIN_PASS:-changeme_admin_password}@blinko-db:5432/${DB_CREATE_DATABASE_NAME:-postgres}
+      DATABASE_URL: postgresql://${DB_ADMIN_NAME:-postgres}:${DB_ADMIN_PASS:-changeme_admin_password}@blinko-db:5432/${DB_CREATE_DATABASE_NAME:-blinko}
     ports:
-      - 172.17.0.1:59095:1111
+      - '172.17.0.1:64121:1111'
     volumes:
       - './volumes/data/blinko:/app/.blinko'
     healthcheck:
@@ -37,26 +37,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://blinko-app:1111'
-      - 'cloudflare.hostname=blinko.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.blinko-app.entrypoints=http'
-      - 'traefik.http.routers.blinko-app-secure.tls=true'
-      - 'traefik.http.routers.blinko-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.blinko-app-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.blinko-app.middlewares=blinko-app-https-redirect'
-      - 'traefik.http.routers.blinko-app-secure.entrypoints=https'
-      - 'traefik.http.routers.blinko-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.blinko-app-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.blinko-app-secure.service=blinko-app'
-      - 'traefik.http.services.blinko-app.loadbalancer.server.port=1111'
     networks:
       - blinko
-      - proxy
-      - cloudflare
 
   db:
     image: postgres:latest
@@ -68,16 +50,16 @@ services:
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: blinko-db
-      POSTGRES_DB: ${DB_CREATE_DATABASE_NAME:-postgres}
+      POSTGRES_DB: ${DB_CREATE_DATABASE_NAME:-blinko}
       POSTGRES_USER: ${DB_ADMIN_NAME:-postgres}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
-      - './volumes/data/db/postgres/blinko:/var/lib/postgresql/data'
+      - './volumes/db/postgres/blinko:/var/lib/postgresql:z'
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', '${DB_ADMIN_NAME:-postgres}', '-d', '${DB_CREATE_DATABASE_NAME:-postgres}']
-      interval: 5s
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
     networks:
       - blinko
 
@@ -85,7 +67,3 @@ networks:
   blinko:
     name: blinko
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true
